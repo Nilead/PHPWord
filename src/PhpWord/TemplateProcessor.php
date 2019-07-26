@@ -737,10 +737,22 @@ class TemplateProcessor
         $xmlBlock = null;
         $matches = array();
         preg_match(
-            '/(<\?xml.*)(<w:p\b.*>\${' . $blockname . '}<\/w:.*?p>)(.*)(<w:p\b.*\${\/' . $blockname . '}<\/w:.*?p>)/is',
+            '/(\${' . $blockname . '}<\/w:.?p>)(.)(<w:p\b.*\${\/' . $blockname . '})/is',
             $this->tempDocumentMainPart,
-            $matches
+            $matches,
+            PREG_OFFSET_CAPTURE
         );
+
+        if (isset($matches[2])) {
+            // find the closest opening
+            $openingPos = strrpos(substr($this->tempDocumentMainPart, 0, $matches[1][1]), '<w:p ');
+            $m2 = substr($this->tempDocumentMainPart, $openingPos, $matches[1][1] - $openingPos + strlen($matches[1][0]));
+            $m3 = $matches[2][0];
+            // find the closest closing
+            $closingPos = strpos($this->tempDocumentMainPart, '</w:p>', $matches[3][1] + strlen($matches[3][0]));
+            $m4 = substr($this->tempDocumentMainPart, $matches[3][1], $closingPos - $matches[3][1] + 6);
+            $matches = ['', '', $m2 , $m3 , $m4];
+        }
 
         if (isset($matches[3])) {
             $xmlBlock = $matches[3];
